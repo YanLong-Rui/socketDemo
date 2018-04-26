@@ -1,0 +1,295 @@
+<!DOCTYPE html><html><head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0" name="viewport">
+    <title>正在与xxx聊天</title>
+    <script src="js/jquery-1.9.0.min.js"  type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="css/chart.css">
+    <link rel="stylesheet" type="text/css" href="css/jquery.sinaEmotion.css">
+    <script type="text/javascript" src="js/sinaEmotion/jquery.sinaEmotion.js"></script>
+     <!--<script type="text/javascript" src="js/layui/layer-mobile/layer.js"></script>-->
+     <script type="text/javascript" src="js/layui/layer/layer.js"></script>
+    <script type="text/javascript" src="js/layui/layer/extend/layer.ext.js"></script>
+     <!--<script type="text/javascript" src="js/layui/layer/extend/layer.ext.js"></script>-->
+</head>
+<body><br>
+<div class="chartroom">
+    <div class="chartarea">
+        <p class="time" style="display:none;"></p>
+        <div class="msgbox sendinfo" style="display:none;">
+            <img src="" width="60" title="暂无图片" class="img right">
+            <div class="msg right">
+                <span class="tip tip1"></span>
+                <p class="content right-x"></p>
+            </div>
+        </div>
+        <div class="msgbox receiveinfo" id="msgbox" style="display:none;">
+            <img src="" width="60" title="暂无图片" class="img">
+            <div class="msg">
+                <span class="tip"></span>
+                <p class="content"></p>
+            </div>
+        </div>
+    </div>
+
+    <!--渲染后台聊天记录区块-->
+
+
+
+
+    <br>
+    <br>
+    <br>
+    <div style="height:15%;"></div>
+    <div class="sendbox">
+        <!--<span id="face">
+            <img src="http://img.t.sinajs.cn/t4/appstyle/expression/ext/normal/5c/huanglianwx_thumb.gif">
+        </span>&nbsp;-->
+        <input type="text" class="infobox" placeholder="请输入要发送的消息" maxlength="255">
+        <input type="hidden" id="J_clientid" value="">
+        <!--<input type="hidden" id="J_siteid" value="<{$mp.get.siteid}>">
+        <input type="hidden" id="J_to_uid" value="<{$mp.get.to_uid}>">
+        <input type="hidden" id="J_endid" value="<{$data.endid}>">&lt;!&ndash;最后一个id&ndash;&gt;
+        <input type="hidden" id="J_to_pic" value="<{$data.toUserInfo.pic}>">
+        <input type="hidden" id="J_from_pic" value="<{$data.fromUserInfo.pic}>">-->
+
+        <input type="hidden" id="J_getMsgStatus" value="1">
+        <button class="clear">清屏</button>
+        <button class="send">发送消息</button>
+    </div>
+</div>
+<script>
+    $(function(){
+        h=11800;
+        $('.chartarea').scrollTop(h);
+        $('#face').SinaEmotion($('.infobox'));
+
+        $('.infobox').bind('input propertychange',function(){
+            var l=$(this).val().length;
+            if(l==255){
+                layer.open({content: '抱歉，一次最多输入255个字节', time: 3});
+//				alert('抱歉，一次最多输入255个字节');
+            }
+        });
+        $('.infobox').keydown(function(event){
+            if(event.keyCode==13){
+                sendinfo();
+            }
+        });
+
+        $('.send').click(function(){
+            sendinfo();
+        });
+        // 清屏
+/*        $('.clear').click(function(){
+            var msg=$('.infobox').val();
+            var tid=$('#J_to_uid').val();
+            var sid=$('#J_siteid').val();
+            layer.open({
+                content: '提示:聊天记录清除后将不可恢复',
+                btn: ['确定清除', '取消'],
+                shadeClose: false,
+                yes: function(){
+                    $.post("/weixin.php?m=shopcomments&a=ajaxClearComments&to_uid="+tid+"&siteid="+sid,{},function(data){
+                        if (data==1) {
+                            layer.open({content: '清除成功', time: 1});
+                            $('.msgbox').hide();
+                            $('.time').hide();
+                        }
+                    });
+                }, no: function(){
+                    layer.closeAll();
+                }
+            });
+        });*/
+
+        /**
+         * 与GatewayWorker建立websocket连接，域名和端口改为你实际的域名端口，
+         * 其中端口为Gateway端口，即start_gateway.php指定的端口。
+         * start_gateway.php 中需要指定websocket协议，像这样
+         * $gateway = new Gateway(websocket://0.0.0.0:7272);
+         */
+        ws = new WebSocket("ws://localhost:8282");
+// 服务端主动推送消息时会触发这里的onmessage
+        ws.onmessage = function(e){
+            // json数据转换成js对象
+            var data = eval("("+e.data+")");
+            var type = data.type || '';
+            var client_id = data.client_id;
+            switch(type){
+                // Events.php中返回的init类型的消息，将client_id发给后台进行uid绑定
+                case 'init':
+                    //prompt层
+                    layer.prompt({title: '输入姓名，并确认', formType: 3}, function(name, index){
+                        layer.close(index);
+                        layer.prompt({title: '输入密码，并确认', formType: 1}, function(pass, index){
+                            layer.close(index);
+                            //layer.msg('您的姓名：'+ name +'<br>您的密码：'+pass);
+                            //加载层
+                            layer.load(1, {
+                                shade: [0.1,'#fff'] //0.1透明度的白色背景
+                            });
+                            var sendObj = {
+                                type: 'login',
+                                name: name,
+                                pass: pass,
+                                client_id: client_id
+                            };
+                            ws.send(JSON.stringify(sendObj));
+                        });
+                    });
+
+                    // 利用jquery发起ajax请求，将client_id发给后端进行uid绑定
+                    /*$('#J_clientid').val(data.client_id);
+                    //$.post('./bind.php', {client_id: data.client_id}, function(data){}, 'json');
+                    var sendObj = {
+                        type: 'login',
+                        message: msg
+                    };
+
+                    webSocket.send(JSON.stringify(sendObj));*/
+                    break;
+                case 'message':
+                    //alert(data.message);
+                    receiveMessage(data.message);
+                    break;
+                // 当mvc框架调用GatewayClient发消息时直接alert出来
+                default :
+                    //alert(e.data);
+            }
+        };
+
+        //接收用户消息渲染页面
+       function receiveMessage(message){
+           $('.infobox').val('');
+           var time = (new Date()).Format("yyyy-M-d h:m:s");
+           var html = '<p class="time" style="display:;">'+time+'</p>';
+           html = html+'<div class="msgbox sendinfo" style="display:;">';
+           html = html+'<img src="'+$('#J_from_pic').val()+'" title="暂无图片" class="img right">';
+           html = html+'<div class="msg">';
+           html = html+'<span class="tip"></span>';
+           html = html+'<p class="content">'+message+'</p>	';
+           html = html+'</div>';
+           html = html+'</div>';
+           //$('.infobox').val('').focus();
+           $('.chartarea .msgbox:last').after(html);
+
+       }
+
+
+
+        function sendinfo(){
+            var msg=$('.infobox').val();
+            /*var tid=$('#J_to_uid').val();
+            var sid=$('#J_siteid').val();*/
+            var clientid=$('#J_clientid').val();
+           // alert(clientid);
+            if(msg==''){
+                layer.open({content: '发送内容不能为空!', time: 1});
+//				alert("发送内容不能为空！");
+                return false;
+            }
+            $('.infobox').val('');
+            var time = (new Date()).Format("yyyy-M-d h:m:s");
+            var html = '<p class="time" style="display:;">'+time+'</p>';
+            html = html+'<div class="msgbox sendinfo" style="display:;">';
+            html = html+'<img src="'+$('#J_from_pic').val()+'" title="暂无图片" class="img right">';
+            html = html+'<div class="msg right">';
+            html = html+'<span class="tip tip1"></span>';
+            html = html+'<p class="content right-x">'+msg+'</p>	';
+            html = html+'</div>';
+            html = html+'</div>';
+            //$('.infobox').val('').focus();
+            $('.chartarea .msgbox:last').after(html);
+
+            $.post("./send_message.php?client_id="+clientid,{content:msg},function(data){
+                data=eval('('+data+')');
+                if (data.code!==0) {
+
+                    h=h+100;
+                    $('.chartarea').animate({scrollTop:h+'px'});
+                    $('.infobox').val('').focus();
+                    //h=h+100;
+                    //$('.chartarea').animate({scrollTop:h+'px'});
+                    /*$('.infobox').val('').focus();
+                     h=h+100;
+                     $('.chartarea').animate({scrollTop:h+'px'});
+
+                     var obj=$('.sendinfo:first').clone();
+                     obj.show();
+                     obj.find('.content').html(msg);
+                     obj.find('.img').attr('src',$('#J_from_pic').val());
+
+                     var tobj=$('.time:first').clone();
+                     tobj.show();
+                     tobj.text(data.time);
+
+                     $('.chartarea .msgbox:last').after(obj).after(tobj);*/
+                }else{
+                    layer.open({content: '信息发送失败!', time: 1});
+//					alert('信息发送失败！');
+                    $('.infobox').val('').focus();
+                    return false;
+                }
+            });
+        }
+
+
+    });
+
+/*    function get_chat(){
+        if($('#J_getMsgStatus').val()==0){
+            return false;
+        }
+        $('#J_getMsgStatus').val(0);
+        //返回处理最新的未读信息
+        var tid=$('#J_to_uid').val();
+        var sid=$('#J_siteid').val();
+        var endid=$('#J_endid').val();
+
+        $.post("?m=shopcomments&a=chatGet&to_uid="+tid+"&siteid="+sid+"&endid="+endid,{},function(mess){
+            mess=eval('('+mess+')');
+            $('#J_getMsgStatus').val(1);
+            if(mess.code==1){
+                $('#J_endid').val(mess.endid);
+                var obj=$('.receiveinfo:first').clone();
+                obj.show();
+                var tobj=$('.time:first').clone();
+                tobj.show();
+                $.each(mess.msg,function(name,value){
+                    h=h+100;
+                    $('.chartarea').animate({scrollTop:h+'px'});
+                    tobj.text(value.time);
+                    obj.find('.content').html(value.content);
+                    obj.find('.img').attr('src',$('#J_to_pic').val());
+                    $('.chartarea .msgbox:last').after(obj).after(tobj);
+                    $('.infobox').val('').focus();
+                });
+            }
+        });
+    }
+    //自动刷新
+    setInterval("get_chat()",2000);*/
+
+
+    Date.prototype.Format = function(fmt)
+    { //author: meizz
+        var o = {
+            "M+" : this.getMonth()+1,                 //月份
+            "d+" : this.getDate(),                    //日
+            "h+" : this.getHours(),                   //小时
+            "m+" : this.getMinutes(),                 //分
+            "s+" : this.getSeconds(),                 //秒
+            "q+" : Math.floor((this.getMonth()+3)/3), //季度
+            "S"  : this.getMilliseconds()             //毫秒
+        };
+        if(/(y+)/.test(fmt))
+            fmt=fmt.replace(RegExp.$1, (this.getFullYear()+"").substr(4 - RegExp.$1.length));
+        for(var k in o)
+            if(new RegExp("("+ k +")").test(fmt))
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length==1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
+        return fmt;
+    }
+</script>
+<a name="top"></a>
+
+</body></html>

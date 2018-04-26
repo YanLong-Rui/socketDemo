@@ -1,0 +1,39 @@
+*{padding:0;margin:0;text-decoration:none;list-style-type:none;}
+html{font-size:62.5%;font-family:'微软雅黑';}
+.chartroom{width:100%;height:100%;}
+.chartarea{width:100%;outline:none;resize:none;border:none;overflow:auto;max-height:47rem;}
+.sendbox{width: 100%;margin: 0 auto;position:fixed;bottom:0;left:0;background:#fff;padding:5px 0;}
+.sendbox .infobox{padding-left:15px;height:3.2rem;line-height:3.2\9rem;display:inline-block;width:58%;border:1px solid;outline:none;resize:none;background:#F2F2F3;}
+.send{color:#fff;font-size:1.4rem;outline:none;-webkit-appearance:none;width:21%;line-height: 3.2rem;}
+.clear{color:#fff;font-size:1.4rem;outline:none;-webkit-appearance:none;width:11%;line-height: 3.2rem;}
+.send{float:right;background:#48DEA8;border:none;margin-right:1%;}
+.send-yuegou{float:right;background:#EC57B7;border:none;margin-right:1%;}
+.clear{float:right;background:#999;border:none;margin-right:1%;}
+.msgbox{width:96%;margin:0 auto;overflow:auto;}
+.msg{display:inline-block;width:60%;margin-top:.5rem;}
+.msg .tip{width:0;height:0;border-width: 10px 10px 10px 0;border-style:solid;border-color: transparent #1AF1A3 transparent transparent;}
+.msg .tip-yuegou{width:0;height:0;border-width: 10px 10px 10px 0;border-style:solid;border-color: transparent #f590d1 transparent transparent;}
+.msg .tip{float:left;margin-top:3%;}
+.msg .tip-yuegou{float:left;margin-top:3%;}
+
+.msg .tip1{border-width: 10px 0 10px 10px;border-color: transparent transparent transparent #E6CA6C;float: right;}
+.msg .tip1-yuegou{border-width: 10px 0 10px 10px;border-color: transparent transparent transparent #EC57B7;float: right;}
+.msg .content{border-radius:10%;line-height: 24px;font-size:1.5rem;color:#fff;width:84%;float:left;background:#1AF1A3;word-wrap: break-word;padding:2.4%;border-radius: 5%;}
+.msg .content-yuegou{border-radius:10%;line-height: 24px;font-size:1.5rem;color:#fff;width:84%;float:left;background:#f590d1;word-wrap: break-word;padding:2.4%;border-radius: 5%;}
+.img{width:13%;vertical-align:top;}
+.right{float:right;}
+.msg .right-x{margin-left:3%;float:right;background:#E6CA6C;}
+.msg .right-x-yuegou{margin-left:3%;float:right;background:#EC57B7;}
+
+#face{display:inline-block;border-radius:50%;vertical-align: middle;margin-left:3%;}
+#face img{width:2.4rem;height:2.4rem;}
+.time{text-align:center;padding:.8rem 0;}
+@media screen and (max-height:500px){ 
+	.chartarea{max-height:420px}	
+} 
+@media screen and (min-height:500px) and (max-height:580px) { 
+	.chartarea{max-height:500px}	
+}  
+@media screen and (min-height:630px){ 
+	.chartarea{max-height:650px}	
+} 
