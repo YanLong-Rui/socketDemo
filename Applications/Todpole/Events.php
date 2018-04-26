@@ -56,11 +56,16 @@ class Events
                 $passwd = $message_data['pass'];
                 $name = $message_data['name'];
                 // 获取用户列表（这里是临时的一个测试数据库）
-                $ret = Db::instance('db1')->column("SELECT * FROM `user` WHERE `user_name`=".$name." AND `birthday`=".$passwd);
-                //$ret = Db::instance('db1')->select('*')->from('user')->where('user_name='.$name)->where('id='.$passwd)->column();
-                // 打印结果
-                echo "<pre>";
-                print_r($ret);die;
+                //$ret = Db::instance('db1')->column("SELECT * FROM `user` WHERE `user_name` ={$name} AND `birthday`={$passwd}");
+                $ret = Db::instance('db1')->select('*')->from('user')->where("user_name= '{$name}'")->column();
+                if($ret[0]){
+                    echo $ret[0];
+                }else{
+                    Gateway::sendToClient($client_id, json_encode(array(
+                        'type'      => 'userNotExists',
+                        'message' => '该用户不存在！'
+                    )));
+                }
                 break;
             // 更新用户
             case 'update':
