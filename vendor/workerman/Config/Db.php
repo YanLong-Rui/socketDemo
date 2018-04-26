@@ -7,11 +7,11 @@ class Db
 
     // 数据库实例1
     public static $db1 = array(
-        'host'    => '114.113.232.8',
+        'host'    => '127.0.0.1',
         'port'    => 3306,
-        'user'    => 'myoomall',
-        'password' => 'kouclo_bubugao888',
-        'dbname'  => 'recmall',
+        'user'    => 'user',
+        'password' => 'pwd',
+        'dbname'  => 'table',
         'charset'    => 'utf8',
     );
 
