@@ -58,19 +58,25 @@ class Events
                 // 获取用户列表（这里是临时的一个测试数据库）
                 //$ret = Db::instance('db1')->column("SELECT * FROM `user` WHERE `user_name` ={$name} AND `birthday`={$passwd}");
                 $ret = Db::instance('db1')->select('*')->from('user')->where("user_name= '{$name}'")->column();
-                if($ret[0]){
-                    echo $ret[0];
-                }else{
+                if($ret[0]){//用户存在则进行绑定
+                    Gateway::bindUid($client_id, $ret[0]);
+                    Gateway::sendToClient($client_id, json_encode(array(
+                        'type'      => 'login',
+                        'uid'      => $ret[0],
+                        'message' => '用户'.$ret[0].'加入了聊天!'
+                    )));
+                }else{//不存在则踢掉该网关
                     Gateway::sendToClient($client_id, json_encode(array(
                         'type'      => 'userNotExists',
                         'message' => '该用户不存在！'
                     )));
+                    Gateway::destoryCurrentClient();//踢掉当前客户端并直接立即销毁相关连接
                 }
                 break;
             // 更新用户
             case 'update':
                 // 转播给所有用户
-                Gateway::sendToAll(json_encode(
+                /*Gateway::sendToAll(json_encode(
                     array(
                         'type'     => 'update',
                         'id'       => $_SESSION['id'],
@@ -82,17 +88,21 @@ class Events
                         'name'     => isset($message_data['name']) ? $message_data['name'] : 'Guest.'.$_SESSION['id'],
                         'authorized'  => false,
                         )
-                    ));
-                return;
+                    ));*/
+
             // 聊天
             case 'message':
                 // 向大家说
-                $new_message = array(
+               /* $new_message = array(
                     'type'=>'message', 
                     'id'  =>$_SESSION['id'],
                     'message'=>$message_data['message'],
                 );
-                return Gateway::sendToAll(json_encode($new_message));
+                return Gateway::sendToAll(json_encode($new_message));*/
+            $msg = $message_data['msg'];
+            $uid = $message_data['fromuid'];
+            Gateway::sendToUid($uid, $msg);
+            return;
         }
    }
    
