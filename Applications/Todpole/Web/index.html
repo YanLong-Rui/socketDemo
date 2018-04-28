@@ -45,8 +45,9 @@
             <img src="http://img.t.sinajs.cn/t4/appstyle/expression/ext/normal/5c/huanglianwx_thumb.gif">
         </span>&nbsp;-->
         <input type="text" class="infobox" placeholder="请输入要发送的消息" maxlength="255">
-        <input type="hidden" id="J_clientid" value="">
-        <!--<input type="hidden" id="J_siteid" value="<{$mp.get.siteid}>">
+        <input type="hidden" id="J_fromid" value="">
+        <input type="hidden" id="J_toid" value="210">
+        <!--<input type="hidden" id="J_clientid" value="">
         <input type="hidden" id="J_to_uid" value="<{$mp.get.to_uid}>">
         <input type="hidden" id="J_endid" value="<{$data.endid}>">&lt;!&ndash;最后一个id&ndash;&gt;
         <input type="hidden" id="J_to_pic" value="<{$data.toUserInfo.pic}>">
@@ -59,6 +60,82 @@
 </div>
 <script>
     $(function(){
+
+        /**
+         * 与GatewayWorker建立websocket连接，域名和端口改为你实际的域名端口，
+         * 其中端口为Gateway端口，即start_gateway.php指定的端口。
+         * start_gateway.php 中需要指定websocket协议，像这样
+         * $gateway = new Gateway(websocket://0.0.0.0:7272);
+         */
+        ws = new WebSocket("ws://localhost:8282");
+// 服务端主动推送消息时会触发这里的onmessage
+        ws.onmessage = function(e){
+            // json数据转换成js对象
+            var data = eval("("+e.data+")");
+            var type = data.type || '';
+            var message = data.message || '';
+            var fromuid = data.uid || '';
+            var client_id = data.client_id || '';
+            var id = data.id || '';
+            switch(type){
+                // Events.php中返回的init类型的消息，将client_id发给后台进行uid绑定
+                case 'init':
+                    //prompt层
+                    layer.prompt({title: '输入姓名，并确认', formType: 3}, function(name, index){
+                        layer.close(index);
+                        layer.prompt({title: '输入密码，并确认', formType: 1}, function(pass, index){
+                            layer.close(index);
+                            var sendObj = {
+                                type: 'login',
+                                name: name,
+                                pass: pass,
+                                client_id: client_id
+                            };
+                            ws.send(JSON.stringify(sendObj));
+                        });
+                    });
+                    break;
+                case 'message':
+                    receiveMessage(data.message);
+                    break;
+                case 'userNotExists':
+                    layer.msg(message);
+                    break;
+                case 'login':
+                    $("#J_fromid").val(fromuid);
+                    layer.msg(message);
+
+                    //iframe窗
+                    layer.open({
+                        type: 2,
+                        title: false,
+                        closeBtn: 0, //不显示关闭按钮
+                        shade: [0],
+                        area: ['340px', '500px'],
+                        offset: 'rb', //右下角弹出
+                        time: 0, //2秒后自动关闭
+                        anim: 2,
+                        content: ['./iframe.html', 'no'] //iframe的url，no代表不显示滚动条
+                        /*end: function(){ //此处用于演示
+                            layer.open({
+                                type: 2,
+                                title: '很多时候，我们想最大化看，比如像这个页面。',
+                                shadeClose: true,
+                                shade: false,
+                                maxmin: true, //开启最大化最小化按钮
+                                area: ['893px', '600px'],
+                                content: '//fly.layui.com/'
+                            });
+                        }*/
+                    });
+                    $('.infobox').focus();
+                    break;
+                // 当mvc框架调用GatewayClient发消息时直接alert出来
+                default :
+                 //alert(e.data);
+                   // receiveMessage(e.data);
+            }
+        };
         h=11800;
         $('.chartarea').scrollTop(h);
         $('#face').SinaEmotion($('.infobox'));
@@ -101,74 +178,14 @@
                 }
             });
         });*/
-
-        /**
-         * 与GatewayWorker建立websocket连接，域名和端口改为你实际的域名端口，
-         * 其中端口为Gateway端口，即start_gateway.php指定的端口。
-         * start_gateway.php 中需要指定websocket协议，像这样
-         * $gateway = new Gateway(websocket://0.0.0.0:7272);
-         */
-        ws = new WebSocket("ws://localhost:8282");
-// 服务端主动推送消息时会触发这里的onmessage
-        ws.onmessage = function(e){
-            // json数据转换成js对象
-            var data = eval("("+e.data+")");
-            var type = data.type || '';
-            var message = data.message || '';
-            var client_id = data.client_id;
-            switch(type){
-                // Events.php中返回的init类型的消息，将client_id发给后台进行uid绑定
-                case 'init':
-                    //prompt层
-                    layer.prompt({title: '输入姓名，并确认', formType: 3}, function(name, index){
-                        layer.close(index);
-                        layer.prompt({title: '输入密码，并确认', formType: 1}, function(pass, index){
-                            layer.close(index);
-                            //layer.msg('您的姓名：'+ name +'<br>您的密码：'+pass);
-                            var index = layer.load(1, {
-                                shade: [0.1,'#fff'] //0.1透明度的白色背景
-                            });
-                            var sendObj = {
-                                type: 'login',
-                                name: name,
-                                pass: pass,
-                                client_id: client_id
-                            };
-                            ws.send(JSON.stringify(sendObj));
-                        });
-                    });
-
-                    // 利用jquery发起ajax请求，将client_id发给后端进行uid绑定
-                    /*$('#J_clientid').val(data.client_id);
-                    //$.post('./bind.php', {client_id: data.client_id}, function(data){}, 'json');
-                    var sendObj = {
-                        type: 'login',
-                        message: msg
-                    };
-
-                    webSocket.send(JSON.stringify(sendObj));*/
-                    break;
-                case 'message':
-                    receiveMessage(data.message);
-                    break;
-                case 'userNotExists':
-                    alert("oooooo");
-                    layer.msg(message);
-                    layer.close();
-                    break;
-                // 当mvc框架调用GatewayClient发消息时直接alert出来
-                default :
-                   // alert(e.data);
-            }
-        };
-
         //接收用户消息渲染页面
        function receiveMessage(message){
-           $('.infobox').val('');
+           //$('.infobox').val('');
            var time = (new Date()).Format("yyyy-M-d h:m:s");
            var html = '<p class="time" style="display:;">'+time+'</p>';
            html = html+'<div class="msgbox sendinfo" style="display:;">';
-           html = html+'<img src="'+$('#J_from_pic').val()+'" title="暂无图片" class="img right">';
+           //html = html+'<img src="'+$('#J_from_pic').val()+'" title="暂无图片" class="img right">';
+           html = html+'<img src="" title="暂无图片" class="img right">';
            html = html+'<div class="msg">';
            html = html+'<span class="tip"></span>';
            html = html+'<p class="content">'+message+'</p>	';
@@ -185,10 +202,10 @@
             var msg=$('.infobox').val();
             /*var tid=$('#J_to_uid').val();
             var sid=$('#J_siteid').val();*/
-            var clientid=$('#J_clientid').val();
+            //var clientid=$('#J_clientid').val();
            // alert(clientid);
             if(msg==''){
-                layer.open({content: '发送内容不能为空!', time: 1});
+                layer.open({content: '发送内容不能为空!', time: 3});
 //				alert("发送内容不能为空！");
                 return false;
             }
@@ -205,7 +222,15 @@
             //$('.infobox').val('').focus();
             $('.chartarea .msgbox:last').after(html);
 
-            $.post("./send_message.php?client_id="+clientid,{content:msg},function(data){
+
+            var sendMsg = {
+                type: 'message',
+                msg: msg,
+                fromuid: $("#J_fromid").val(),
+                touid: $("#J_toid").val()
+            };
+            ws.send(JSON.stringify(sendMsg));
+            /*$.post("./send_message.php?client_id="+clientid,{content:msg},function(data){
                 data=eval('('+data+')');
                 if (data.code!==0) {
 
@@ -214,7 +239,7 @@
                     $('.infobox').val('').focus();
                     //h=h+100;
                     //$('.chartarea').animate({scrollTop:h+'px'});
-                    /*$('.infobox').val('').focus();
+                    /!*$('.infobox').val('').focus();
                      h=h+100;
                      $('.chartarea').animate({scrollTop:h+'px'});
 
@@ -227,14 +252,14 @@
                      tobj.show();
                      tobj.text(data.time);
 
-                     $('.chartarea .msgbox:last').after(obj).after(tobj);*/
+                     $('.chartarea .msgbox:last').after(obj).after(tobj);*!/
                 }else{
                     layer.open({content: '信息发送失败!', time: 1});
 //					alert('信息发送失败！');
                     $('.infobox').val('').focus();
                     return false;
                 }
-            });
+            });*/
         }
 
 
