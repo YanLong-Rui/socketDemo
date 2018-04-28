@@ -58,12 +58,14 @@ class Events
                 // 获取用户列表（这里是临时的一个测试数据库）
                 //$ret = Db::instance('db1')->column("SELECT * FROM `user` WHERE `user_name` ={$name} AND `birthday`={$passwd}");
                 $ret = Db::instance('db1')->select('*')->from('user')->where("user_name= '{$name}'")->column();
+                $allUsers = Db::instance('db1')->select('*')->from('user')->offset(5)->limit(10)->column();
                 if($ret[0]){//用户存在则进行绑定
                     Gateway::bindUid($client_id, $ret[0]);
                     Gateway::sendToClient($client_id, json_encode(array(
                         'type'      => 'login',
                         'uid'      => $ret[0],
-                        'message' => '用户'.$ret[0].'加入了聊天!'
+                        'message' => '用户'.$ret[0].'加入了聊天!',
+                        'allUsers' =>$allUsers
                     )));
                 }else{//不存在则踢掉该网关
                     Gateway::sendToClient($client_id, json_encode(array(
@@ -101,7 +103,14 @@ class Events
                 return Gateway::sendToAll(json_encode($new_message));*/
             $msg = $message_data['msg'];
             $uid = $message_data['fromuid'];
-            Gateway::sendToUid($uid, $msg);
+            $toid = $message_data['touid'];
+            Gateway::sendToUid($toid, $msg);
+
+
+            /*Gateway::sendToClient($client_id, json_encode(array(
+                'type'      => 'init',
+                'uid' => $client_id
+            )));*/
             return;
         }
    }
